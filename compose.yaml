@@ -1,0 +1,32 @@
+# night-garden — publicado por Cloudflare Tunnel en night-garden.ilianfelipez.site
+# El túnel entra por 127.0.0.1:8082. Desde la LAN no es accesible.
+services:
+  web:
+    image: nginxinc/nginx-unprivileged:stable-alpine
+    container_name: web-night-garden
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8080"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # Endurecimiento: sin root, sin capacidades, sistema de archivos de solo lectura
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    pids_limit: 50
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
